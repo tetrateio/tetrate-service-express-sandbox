@@ -4,6 +4,13 @@ echo "Publishing a Service... as per https://docs.tetrate.io/service-express/get
 
 echo "Deploy an Ingress Gateway..."
 
+cluster_name="$1"
+external_dns_zone="$2"
+
+echo "Cluster Name: $cluster_name"
+echo "External DNS Zone: $external_dns_zone"
+
+
 cat <<EOF > ingress-gw-install.yaml
 apiVersion: install.tetrate.io/v1alpha1
 kind: IngressGateway
@@ -52,7 +59,7 @@ spec:
   http:
   - name: bookinfo
     port: 80
-    hostname: bookinfo.tetrate.io
+    hostname: bookinfo.$cluster_name.$external_dns_zone
     routing:
       rules:
       - route:
@@ -67,6 +74,6 @@ echo "Accessing the Service..."
 
 export GATEWAY_IP=$(kubectl -n bookinfo get service bookinfo-ingress-gw -o jsonpath="{.status.loadBalancer.ingress[0]['hostname','ip']}")
 
-curl -s --connect-to bookinfo.tetrate.io:80:$GATEWAY_IP \
-    "http://bookinfo.tetrate.io/productpage" | \
+curl -s --connect-to bookinfo.$cluster_name.$external_dns_zone:80:$GATEWAY_IP \
+    "http://bookinfo.$cluster_name.$external_dns_zone/productpage" | \
     grep "<title>" || true; echo "Deny All policy is in effect..."
